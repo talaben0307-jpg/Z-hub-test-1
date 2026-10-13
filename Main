@@ -1,18 +1,19 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local CPZMenu = loadstring(game:HttpGet("https://raw.githubusercontent.com/talaben0307-jpg/cpzmenu/refs/heads/main/menu"))()
 
-local Window = Rayfield:CreateWindow({
-   Name = "Z hub - test",
-   LoadingTitle = "Z Hub Loading...",
-   LoadingSubtitle = "by Phong",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "ZHubConfig",
-      FileName = "ZHubSettings"
-   },
-   KeySystem = false,
+local Window = CPZMenu:CreateWindow({
+    Title = "Z hub - test",
+    SubTitle = "⚡ CPZ Edition | by Phong"
 })
 
-local Tab = Window:CreateTab("Main & Bypass", 4483362458)
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main & Bypass" })
+}
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local localPlayer = Players.LocalPlayer
 
 local state = {
     Noclip = false,
@@ -26,9 +27,9 @@ local CONFIG = {
 
 local resetCount = 0
 
-game:GetService("RunService").Stepped:Connect(function()
-    if state.Noclip and game:GetService("Players").LocalPlayer.Character then
-        for _, part in ipairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
+RunService.Stepped:Connect(function()
+    if state.Noclip and localPlayer.Character then
+        for _, part in ipairs(localPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = false
             end
@@ -40,14 +41,13 @@ task.spawn(function()
     while true do
         task.wait(0.5)
         if state.Bypass then
-            local localPlayer = game:GetService("Players").LocalPlayer
             local character = localPlayer.Character
             local hrp = character and character:FindFirstChild("HumanoidRootPart")
             local humanoid = character and character:FindFirstChildOfClass("Humanoid")
             
             if hrp and humanoid and humanoid.Health > 0 then
                 local target = nil
-                for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+                for _, p in ipairs(Players:GetPlayers()) do
                     if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                         target = p.Character.HumanoidRootPart
                         break
@@ -73,11 +73,11 @@ task.spawn(function()
                     
                     if state.Bypass and humanoid and humanoid.Health > 0 then
                         if teleportedBack then
-                            local successRemote = game:GetService("ReplicatedStorage"):FindFirstChild("Knit") 
-                                and game:GetService("ReplicatedStorage").Knit:FindFirstChild("Services") 
-                                and game:GetService("ReplicatedStorage").Knit.Services:FindFirstChild("JoinService")
-                                and game:GetService("ReplicatedStorage").Knit.Services.JoinService:FindFirstChild("RE")
-                                and game:GetService("ReplicatedStorage").Knit.Services.JoinService.RE:FindFirstChild("Reset")
+                            local successRemote = ReplicatedStorage:FindFirstChild("Knit") 
+                                and ReplicatedStorage.Knit:FindFirstChild("Services") 
+                                and ReplicatedStorage.Knit.Services:FindFirstChild("JoinService")
+                                and ReplicatedStorage.Knit.Services.JoinService:FindFirstChild("RE")
+                                and ReplicatedStorage.Knit.Services.JoinService.RE:FindFirstChild("Reset")
 
                             while state.Bypass and humanoid and humanoid.Health > 0 do
                                 if successRemote then
@@ -88,11 +88,7 @@ task.spawn(function()
                             end
                         else
                             state.Bypass = false
-                            Rayfield:Notify({
-                                Title = "Knor bypass",
-                                Content = "Bypass Success (Resets: " .. tostring(resetCount) .. ")",
-                                Duration = 5
-                            })
+                            print("[Knor bypass] Bypass Success (Resets: " .. tostring(resetCount) .. ")")
                             task.wait(2)
                         end
                     end
@@ -106,14 +102,13 @@ task.spawn(function()
     while true do
         task.wait(CONFIG.SweepTime)
         if state.SweepAll then
-            local localPlayer = game:GetService("Players").LocalPlayer
             local myChar = localPlayer.Character
             local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
             local humanoid = myChar and myChar:FindFirstChildOfClass("Humanoid")
             
             if myHRP and humanoid and humanoid.Health > 0 then
                 local targets = {}
-                for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+                for _, p in ipairs(Players:GetPlayers()) do
                     if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                         local hrp = p.Character.HumanoidRootPart
                         if (hrp.Position - myHRP.Position).Magnitude <= 500 then
@@ -135,54 +130,35 @@ task.spawn(function()
     end
 end)
 
-Tab:CreateSection("Knor Bypass & Farm Controls")
+Tabs.Main:AddSection("Knor Bypass & Farm Controls")
 
-Tab:CreateToggle({
-   Name = "👻 Noclip (Đi xuyên tường)",
-   CurrentValue = false,
-   Flag = "NoclipToggle",
-   Callback = function(Value)
-      state.Noclip = Value
-   end,
+Tabs.Main:AddButton({
+    Title = "👻 Bật / Tắt Noclip",
+    Callback = function()
+        state.Noclip = not state.Noclip
+        print("[Z Hub] Noclip: " .. tostring(state.Noclip))
+    end
 })
 
-Tab:CreateToggle({
-   Name = "🛡️ Bypass AC (Knor Auto Reset Method)",
-   CurrentValue = false,
-   Flag = "BypassToggle",
-   Callback = function(Value)
-      state.Bypass = Value
-      if Value then
-          resetCount = 0
-          Rayfield:Notify({ Title = "Knor bypass", Content = "Start bypass...", Duration = 3 })
-      end
-   end,
+Tabs.Main:AddButton({
+    Title = "🛡️ Bật / Tắt Bypass AC (Knor Method)",
+    Callback = function()
+        state.Bypass = not state.Bypass
+        if state.Bypass then
+            resetCount = 0
+            print("[Knor bypass] Start bypass...")
+        else
+            print("[Knor bypass] Stopped.")
+        end
+    end
 })
 
-Tab:CreateToggle({
-   Name = "⚡ Gojo Sweep All / 0.2s Farm",
-   CurrentValue = false,
-   Flag = "SweepAllToggle",
-   Callback = function(Value)
-      state.SweepAll = Value
-   end,
+Tabs.Main:AddButton({
+    Title = "⚡ Bật / Tắt Gojo Sweep All",
+    Callback = function()
+        state.SweepAll = not state.SweepAll
+        print("[Z Hub] Sweep All: " .. tostring(state.SweepAll))
+    end
 })
 
-Tab:CreateInput({
-   Name = "⏱️ Tốc độ Sweep (Mặc định 0.01s)",
-   PlaceholderText = "0.01",
-   RemoveTextAfterFocusLost = false,
-   Flag = "SweepTimeInput",
-   Callback = function(Text)
-      local num = tonumber(Text)
-      if num then
-          CONFIG.SweepTime = num
-      end
-   end,
-})
-
-Rayfield:Notify({
-   Title = "Z hub - test",
-   Content = "Script đã tải thành công qua Rayfield!",
-   Duration = 5
-})
+Window:SelectTab(1)
