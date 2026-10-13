@@ -2,7 +2,7 @@ local CPZMenu = loadstring(game:HttpGet("https://raw.githubusercontent.com/talab
 
 local Window = CPZMenu:CreateWindow({
     Title = "Z hub - test",
-    SubTitle = "⚡ CPZ Edition | by Phong"
+    SubTitle = "⚡ Fixed Edition | by Phong"
 })
 
 local Tabs = {
@@ -10,7 +10,6 @@ local Tabs = {
 }
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
@@ -27,16 +26,21 @@ local CONFIG = {
 
 local resetCount = 0
 
+-- 1. Noclip Xuyên Tường Cố Định (Fix triệt để không bị mất khi chết)
 RunService.Stepped:Connect(function()
-    if state.Noclip and localPlayer.Character then
-        for _, part in ipairs(localPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+    if state.Noclip then
+        local char = localPlayer.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
             end
         end
     end
 end)
 
+-- 2. Logic Bypass & Reset Chuẩn (Ép gọi lệnh tự sát để reset server state khi bị kẹt)
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -56,16 +60,17 @@ task.spawn(function()
                 
                 if target then
                     local startPos = hrp.Position
+                    -- Dịch chuyển ra phía sau đối thủ
                     hrp.CFrame = target.CFrame * CFrame.new(0, 0, 2.5)
                     
                     local teleportedBack = false
                     local timer = 0
                     
-                    while timer < 3 do
+                    while timer < 2 do
                         task.wait(0.1)
                         timer = timer + 0.1
                         if not state.Bypass or not humanoid or humanoid.Health <= 0 then break end
-                        if (hrp.Position - startPos).Magnitude < 10 then
+                        if (hrp.Position - startPos).Magnitude < 8 then
                             teleportedBack = true
                             break
                         end
@@ -73,22 +78,21 @@ task.spawn(function()
                     
                     if state.Bypass and humanoid and humanoid.Health > 0 then
                         if teleportedBack then
-                            local successRemote = ReplicatedStorage:FindFirstChild("Knit") 
-                                and ReplicatedStorage.Knit:FindFirstChild("Services") 
-                                and ReplicatedStorage.Knit.Services:FindFirstChild("JoinService")
-                                and ReplicatedStorage.Knit.Services.JoinService:FindFirstChild("RE")
-                                and ReplicatedStorage.Knit.Services.JoinService.RE:FindFirstChild("Reset")
-
+                            -- Nếu bị server kéo giật lại vị trí cũ -> Tiến hành Loop Reset bằng cách hủy khớp nhân vật
                             while state.Bypass and humanoid and humanoid.Health > 0 do
-                                if successRemote then
-                                    successRemote:FireServer()
-                                    resetCount = resetCount + 1
-                                end
+                                pcall(function()
+                                    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+                                        localPlayer.Character.Humanoid.Health = 0 -- Ép chết để reset
+                                    end
+                                end)
+                                resetCount = resetCount + 1
+                                print("[Knor bypass] Reset attempts: " .. tostring(resetCount))
                                 task.wait(3)
                             end
                         else
+                            -- Nếu giữ nguyên vị trí thành công -> Bypass hoàn tất
                             state.Bypass = false
-                            print("[Knor bypass] Bypass Success (Resets: " .. tostring(resetCount) .. ")")
+                            print("[Knor bypass] Bypass Success! Total Resets: " .. tostring(resetCount))
                             task.wait(2)
                         end
                     end
@@ -98,6 +102,7 @@ task.spawn(function()
     end
 end)
 
+-- 3. Logic Sweep All / Gojo Farm
 task.spawn(function()
     while true do
         task.wait(CONFIG.SweepTime)
@@ -141,12 +146,12 @@ Tabs.Main:AddButton({
 })
 
 Tabs.Main:AddButton({
-    Title = "🛡️ Bật / Tắt Bypass AC (Knor Method)",
+    Title = "🛡️ Bật / Tắt Bypass AC",
     Callback = function()
         state.Bypass = not state.Bypass
         if state.Bypass then
             resetCount = 0
-            print("[Knor bypass] Start bypass...")
+            print("[Knor bypass] Start bypass loop...")
         else
             print("[Knor bypass] Stopped.")
         end
