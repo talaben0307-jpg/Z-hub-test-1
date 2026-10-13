@@ -191,6 +191,8 @@ SaveManager:BuildConfigSection(Tabs.Settings)
 
 Window:SelectTab(1)
 
+SaveManager:LoadAutoloadConfig()
+
 Fluent:Notify({
     Title = "Z hub - test",
     Content = "Script đã tải thành công! Bấm phím F để ẩn/hiện menu.",
