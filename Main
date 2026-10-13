@@ -2,7 +2,7 @@ local CPZMenu = loadstring(game:HttpGet("https://raw.githubusercontent.com/talab
 
 local Window = CPZMenu:CreateWindow({
     Title = "Z hub - test",
-    SubTitle = "⚡ Fixed Respawn Edition | by Phong"
+    SubTitle = "⚡ Knor Native Edition | by Phong"
 })
 
 local Tabs = {
@@ -10,7 +10,7 @@ local Tabs = {
 }
 
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
 
@@ -26,7 +26,7 @@ local CONFIG = {
 
 local resetCount = 0
 
--- 1. Noclip Xuyên Tường Cố Định
+-- 1. Noclip Xuyên Tường
 RunService.Stepped:Connect(function()
     if state.Noclip then
         local char = localPlayer.Character
@@ -40,7 +40,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- 2. Logic Bypass & Respawn Chuẩn (Dùng BreakJoints() để ép chết và hồi sinh thật)
+-- 2. Knor Native Bypass Loop (Đúng chuẩn 100% theo code gốc từ ảnh của cậu)
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -60,16 +60,16 @@ task.spawn(function()
                 
                 if target then
                     local startPos = hrp.Position
-                    hrp.CFrame = target.CFrame * CFrame.new(0, 0, 2.5)
+                    hrp.CFrame = target.CFrame * CFrame.new(0, 0, 2.5)[cite: 3, 4]
                     
                     local teleportedBack = false
                     local timer = 0
                     
-                    while timer < 2 do
+                    while timer < 3 do
                         task.wait(0.1)
                         timer = timer + 0.1
                         if not state.Bypass or not humanoid or humanoid.Health <= 0 then break end
-                        if (hrp.Position - startPos).Magnitude < 8 then
+                        if (hrp.Position - startPos).Magnitude < 10 then
                             teleportedBack = true
                             break
                         end
@@ -77,21 +77,24 @@ task.spawn(function()
                     
                     if state.Bypass and humanoid and humanoid.Health > 0 then
                         if teleportedBack then
-                            -- Bị kéo giật lại -> Ép bẻ khớp xương để chết và Respawn thật sự
-                            while state.Bypass and localPlayer.Character do
-                                pcall(function()
-                                    if localPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                        localPlayer.Character:BreakJoints() -- Buộc server phải công nhận nhân vật chết và cho Respawn
-                                    end
-                                end)
-                                resetCount = resetCount + 1
-                                print("[Knor bypass] BreakJoints attempts: " .. tostring(resetCount))
-                                task.wait(3.5) -- Chờ thời gian để game load lại nhân vật mới
-                                break
+                            -- Tìm đúng đường dẫn Knit Service Reset như code gốc của Knor
+                            local resetRemote = ReplicatedStorage:FindFirstChild("Knit") 
+                                and ReplicatedStorage.Knit:FindFirstChild("Services") 
+                                and ReplicatedStorage.Knit.Services:FindFirstChild("JoinService")
+                                and ReplicatedStorage.Knit.Services.JoinService:FindFirstChild("RE")
+                                and ReplicatedStorage.Knit.Services.JoinService.RE:FindFirstChild("Reset")
+
+                            while state.Bypass and humanoid and humanoid.Health > 0 do
+                                if resetRemote then
+                                    resetRemote:FireServer()[cite: 3]
+                                    resetCount = resetCount + 1[cite: 3]
+                                    print("[Knor bypass] FireServer Reset attempts: " .. tostring(resetCount))
+                                end
+                                task.wait(3)[cite: 3]
                             end
                         else
                             state.Bypass = false
-                            print("[Knor bypass] Bypass Success! Total Attempts: " .. tostring(resetCount))
+                            print("[Knor bypass] Bypass Success! Resets: " .. tostring(resetCount))
                             task.wait(2)
                         end
                     end
@@ -119,12 +122,12 @@ task.spawn(function()
                             table.insert(targets, hrp)
                         end
                     end
-                end
+                end,
                 
                 for _, targetHRP in ipairs(targets) do
                     if not state.SweepAll or not humanoid or humanoid.Health <= 0 then break end
                     if myHRP and targetHRP and targetHRP.Parent then
-                        myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, -3, 2.5)
+                        myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, -3, 2.5)[cite: 3, 4]
                         myHRP.Velocity = Vector3.new(0, 0, 0)
                     end
                     task.wait(CONFIG.SweepTime)
@@ -150,7 +153,7 @@ Tabs.Main:AddButton({
         state.Bypass = not state.Bypass
         if state.Bypass then
             resetCount = 0
-            print("[Knor bypass] Start bypass loop...")
+            print("[Knor bypass] Start bypass...")
         else
             print("[Knor bypass] Stopped.")
         end
