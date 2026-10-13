@@ -1,0 +1,198 @@
+local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Z hub - test",
+    SubTitle = "⚡ Optimized Edition | by Phong",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(520, 380),
+    Acrylic = true,
+    Theme = "Darker",
+    MinimizeKey = Enum.KeyCode.F
+})
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main & Bypass", Icon = "zap" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local localPlayer = Players.LocalPlayer
+
+local state = {
+    Noclip = false,
+    Bypass = false,
+    SweepAll = false
+}
+
+local CONFIG = {
+    SweepTime = 0.01
+}
+
+local resetCount = 0
+
+RunService.Stepped:Connect(function()
+    if state.Noclip and localPlayer.Character then
+        for _, part in ipairs(localPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if state.Bypass then
+            local character = localPlayer.Character
+            local hrp = character and character:FindFirstChild("HumanoidRootPart")
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+            
+            if hrp and humanoid and humanoid.Health > 0 then
+                local target = nil
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        target = p.Character.HumanoidRootPart
+                        break
+                    end
+                end
+                
+                if target then
+                    local startPos = hrp.Position
+                    hrp.CFrame = target.CFrame * CFrame.new(0, 0, 2.5)
+                    
+                    local teleportedBack = false
+                    local timer = 0
+                    
+                    while timer < 3 do
+                        task.wait(0.1)
+                        timer = timer + 0.1
+                        if not state.Bypass or not humanoid or humanoid.Health <= 0 then break end
+                        if (hrp.Position - startPos).Magnitude < 10 then
+                            teleportedBack = true
+                            break
+                        end
+                    end
+                    
+                    if state.Bypass and humanoid and humanoid.Health > 0 then
+                        if teleportedBack then
+                            local successRemote = ReplicatedStorage:FindFirstChild("Knit") 
+                                and ReplicatedStorage.Knit:FindFirstChild("Services") 
+                                and ReplicatedStorage.Knit.Services:FindFirstChild("JoinService")
+                                and ReplicatedStorage.Knit.Services.JoinService:FindFirstChild("RE")
+                                and ReplicatedStorage.Knit.Services.JoinService.RE:FindFirstChild("Reset")
+
+                            while state.Bypass and humanoid and humanoid.Health > 0 do
+                                if successRemote then
+                                    successRemote:FireServer()
+                                    resetCount = resetCount + 1
+                                end
+                                task.wait(3)
+                            end
+                        else
+                            state.Bypass = false
+                            Fluent:Notify({
+                                Title = "Knor bypass",
+                                Content = "Bypass Success (Resets: " .. tostring(resetCount) .. ")",
+                                Duration = 5
+                            })
+                            task.wait(2)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(CONFIG.SweepTime)
+        if state.SweepAll then
+            local myChar = localPlayer.Character
+            local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+            local humanoid = myChar and myChar:FindFirstChildOfClass("Humanoid")
+            
+            if myHRP and humanoid and humanoid.Health > 0 then
+                local targets = {}
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local hrp = p.Character.HumanoidRootPart
+                        if (hrp.Position - myHRP.Position).Magnitude <= 500 then
+                            table.insert(targets, hrp)
+                        end
+                    end
+                end
+                
+                for _, targetHRP in ipairs(targets) do
+                    if not state.SweepAll or not humanoid or humanoid.Health <= 0 then break end
+                    if myHRP and targetHRP and targetHRP.Parent then
+                        myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, -3, 2.5)
+                        myHRP.Velocity = Vector3.new(0, 0, 0)
+                    end
+                    task.wait(CONFIG.SweepTime)
+                end
+            end
+        end
+    end
+end)
+
+Tabs.Main:AddSection("Knor Bypass & Farm Controls")
+
+Tabs.Main:AddToggle("NoclipToggle", {
+    Title = "👻 Noclip (Đi xuyên tường)",
+    Default = false,
+    Callback = function(value)
+        state.Noclip = value
+    end
+})
+
+Tabs.Main:AddToggle("BypassToggle", {
+    Title = "🛡️ Bypass AC (Knor Auto Reset Method)",
+    Default = false,
+    Callback = function(value)
+        state.Bypass = value
+        if value then
+            resetCount = 0
+            Fluent:Notify({ Title = "Knor bypass", Content = "Start bypass...", Duration = 3 })
+        end
+    end
+})
+
+Tabs.Main:AddToggle("SweepAllToggle", {
+    Title = "⚡ Gojo Sweep All / 0.2s Farm",
+    Default = false,
+    Callback = function(value)
+        state.SweepAll = value
+    end
+})
+
+Tabs.Main:AddInput("SweepTimeInput", {
+    Title = "⏱️ Tốc độ Sweep (Mặc định 0.01s)",
+    Default = "0.01",
+    Placeholder = "Nhập thời gian...",
+    Numeric = true,
+    Finished = true,
+    Callback = function(text)
+        local num = tonumber(text)
+        if num then
+            CONFIG.SweepTime = num
+        end
+    end
+})
+
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+Window:SelectTab(1)
+
+Fluent:Notify({
+    Title = "Z hub - test",
+    Content = "Script đã tải thành công! Bấm phím F để ẩn/hiện menu.",
+    Duration = 5
+})
