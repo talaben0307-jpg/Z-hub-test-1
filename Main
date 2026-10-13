@@ -2,7 +2,7 @@ local CPZMenu = loadstring(game:HttpGet("https://raw.githubusercontent.com/talab
 
 local Window = CPZMenu:CreateWindow({
     Title = "Z hub - test",
-    SubTitle = "⚡ Fixed Edition | by Phong"
+    SubTitle = "⚡ Fixed Respawn Edition | by Phong"
 })
 
 local Tabs = {
@@ -26,7 +26,7 @@ local CONFIG = {
 
 local resetCount = 0
 
--- 1. Noclip Xuyên Tường Cố Định (Fix triệt để không bị mất khi chết)
+-- 1. Noclip Xuyên Tường Cố Định
 RunService.Stepped:Connect(function()
     if state.Noclip then
         local char = localPlayer.Character
@@ -40,7 +40,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- 2. Logic Bypass & Reset Chuẩn (Ép gọi lệnh tự sát để reset server state khi bị kẹt)
+-- 2. Logic Bypass & Respawn Chuẩn (Dùng BreakJoints() để ép chết và hồi sinh thật)
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -60,7 +60,6 @@ task.spawn(function()
                 
                 if target then
                     local startPos = hrp.Position
-                    -- Dịch chuyển ra phía sau đối thủ
                     hrp.CFrame = target.CFrame * CFrame.new(0, 0, 2.5)
                     
                     local teleportedBack = false
@@ -78,21 +77,21 @@ task.spawn(function()
                     
                     if state.Bypass and humanoid and humanoid.Health > 0 then
                         if teleportedBack then
-                            -- Nếu bị server kéo giật lại vị trí cũ -> Tiến hành Loop Reset bằng cách hủy khớp nhân vật
-                            while state.Bypass and humanoid and humanoid.Health > 0 do
+                            -- Bị kéo giật lại -> Ép bẻ khớp xương để chết và Respawn thật sự
+                            while state.Bypass and localPlayer.Character do
                                 pcall(function()
-                                    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
-                                        localPlayer.Character.Humanoid.Health = 0 -- Ép chết để reset
+                                    if localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                                        localPlayer.Character:BreakJoints() -- Buộc server phải công nhận nhân vật chết và cho Respawn
                                     end
                                 end)
                                 resetCount = resetCount + 1
-                                print("[Knor bypass] Reset attempts: " .. tostring(resetCount))
-                                task.wait(3)
+                                print("[Knor bypass] BreakJoints attempts: " .. tostring(resetCount))
+                                task.wait(3.5) -- Chờ thời gian để game load lại nhân vật mới
+                                break
                             end
                         else
-                            -- Nếu giữ nguyên vị trí thành công -> Bypass hoàn tất
                             state.Bypass = false
-                            print("[Knor bypass] Bypass Success! Total Resets: " .. tostring(resetCount))
+                            print("[Knor bypass] Bypass Success! Total Attempts: " .. tostring(resetCount))
                             task.wait(2)
                         end
                     end
