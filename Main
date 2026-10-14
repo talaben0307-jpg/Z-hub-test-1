@@ -1,17 +1,7 @@
-local CPZMenu = loadstring(game:HttpGet("https://raw.githubusercontent.com/talaben0307-jpg/cpzmenu/refs/heads/main/menu"))()
-
-local Window = CPZMenu:CreateWindow({
-    Title = "Z hub - test",
-    SubTitle = "⚡ Knor Native Edition | by Phong"
-})
-
-local Tabs = {
-    Main = Window:AddTab({ Title = "Main & Bypass" })
-}
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
 local localPlayer = Players.LocalPlayer
 
 local state = {
@@ -25,6 +15,81 @@ local CONFIG = {
 }
 
 local resetCount = 0
+
+-- Tạo Menu UI Đơn Giản, Chống Crash Tuyệt Đối
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local TitleLabel = Instance.new("TextLabel")
+local ToggleNoclipBtn = Instance.new("TextButton")
+local ToggleBypassBtn = Instance.new("TextButton")
+local ToggleSweepBtn = Instance.new("TextButton")
+
+ScreenGui.Name = "ZHubTest"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
+MainFrame.Size = UDim2.new(0, 240, 0, 220)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+TitleLabel.Parent = MainFrame
+TitleLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+TitleLabel.Size = UDim2.new(0, 240, 0, 40)
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.Text = "Z hub - test"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 18
+
+ToggleNoclipBtn.Parent = MainFrame
+ToggleNoclipBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+ToggleNoclipBtn.Position = UDim2.new(0, 10, 0, 55)
+ToggleNoclipBtn.Size = UDim2.new(0, 220, 0, 40)
+ToggleNoclipBtn.Font = Enum.Font.SourceSansBold
+ToggleNoclipBtn.Text = "Noclip: OFF"
+ToggleNoclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleNoclipBtn.TextSize = 14
+
+ToggleBypassBtn.Parent = MainFrame
+ToggleBypassBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+ToggleBypassBtn.Position = UDim2.new(0, 10, 0, 105)
+ToggleBypassBtn.Size = UDim2.new(0, 220, 0, 40)
+ToggleBypassBtn.Font = Enum.Font.SourceSansBold
+ToggleBypassBtn.Text = "Bypass AC: OFF"
+ToggleBypassBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBypassBtn.TextSize = 14
+
+ToggleSweepBtn.Parent = MainFrame
+ToggleSweepBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+ToggleSweepBtn.Position = UDim2.new(0, 10, 0, 155)
+ToggleSweepBtn.Size = UDim2.new(0, 220, 0, 40)
+ToggleSweepBtn.Font = Enum.Font.SourceSansBold
+ToggleSweepBtn.Text = "Gojo Sweep All: OFF"
+ToggleSweepBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleSweepBtn.TextSize = 14
+
+-- Xử lý sự kiện bấm nút
+ToggleNoclipBtn.MouseButton1Click:Connect(function()
+    state.Noclip = not state.Noclip
+    ToggleNoclipBtn.Text = state.Noclip and "Noclip: ON" or "Noclip: OFF"
+    ToggleNoclipBtn.BackgroundColor3 = state.Noclip and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 60, 60)
+end)
+
+ToggleBypassBtn.MouseButton1Click:Connect(function()
+    state.Bypass = not state.Bypass
+    ToggleBypassBtn.Text = state.Bypass and "Bypass AC: ON" or "Bypass AC: OFF"
+    ToggleBypassBtn.BackgroundColor3 = state.Bypass and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 60, 60)
+    if state.Bypass then resetCount = 0 end
+end)
+
+ToggleSweepBtn.MouseButton1Click:Connect(function()
+    state.SweepAll = not state.SweepAll
+    ToggleSweepBtn.Text = state.SweepAll and "Gojo Sweep All: ON" or "Gojo Sweep All: OFF"
+    ToggleSweepBtn.BackgroundColor3 = state.SweepAll and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 60, 60)
+end)
 
 -- 1. Noclip Xuyên Tường
 RunService.Stepped:Connect(function()
@@ -40,7 +105,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- 2. Knor Native Bypass Loop (Đúng chuẩn 100% theo code gốc từ ảnh của cậu)
+-- 2. Knor Bypass & Force Death Loop
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -60,7 +125,7 @@ task.spawn(function()
                 
                 if target then
                     local startPos = hrp.Position
-                    hrp.CFrame = target.CFrame * CFrame.new(0, 0, 2.5)[cite: 3, 4]
+                    hrp.CFrame = target.CFrame * CFrame.new(0, 0, 2.5)
                     
                     local teleportedBack = false
                     local timer = 0
@@ -77,24 +142,35 @@ task.spawn(function()
                     
                     if state.Bypass and humanoid and humanoid.Health > 0 then
                         if teleportedBack then
-                            -- Tìm đúng đường dẫn Knit Service Reset như code gốc của Knor
                             local resetRemote = ReplicatedStorage:FindFirstChild("Knit") 
                                 and ReplicatedStorage.Knit:FindFirstChild("Services") 
                                 and ReplicatedStorage.Knit.Services:FindFirstChild("JoinService")
                                 and ReplicatedStorage.Knit.Services.JoinService:FindFirstChild("RE")
                                 and ReplicatedStorage.Knit.Services.JoinService.RE:FindFirstChild("Reset")
 
-                            while state.Bypass and humanoid and humanoid.Health > 0 do
-                                if resetRemote then
-                                    resetRemote:FireServer()[cite: 3]
-                                    resetCount = resetCount + 1[cite: 3]
-                                    print("[Knor bypass] FireServer Reset attempts: " .. tostring(resetCount))
-                                end
-                                task.wait(3)[cite: 3]
+                            while state.Bypass and localPlayer.Character do
+                                pcall(function()
+                                    if resetRemote then
+                                        resetRemote:FireServer()
+                                    end
+                                    local char = localPlayer.Character
+                                    if char then
+                                        local rootPart = char:FindFirstChild("HumanoidRootPart")
+                                        if rootPart then
+                                            rootPart:Destroy()
+                                        end
+                                    end
+                                end)
+                                resetCount = resetCount + 1
+                                print("[Knor bypass] Force Death attempts: " .. tostring(resetCount))
+                                task.wait(3)
+                                break
                             end
                         else
                             state.Bypass = false
-                            print("[Knor bypass] Bypass Success! Resets: " .. tostring(resetCount))
+                            ToggleBypassBtn.Text = "Bypass AC: OFF"
+                            ToggleBypassBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                            print("[Knor bypass] Success!")
                             task.wait(2)
                         end
                     end
@@ -122,12 +198,12 @@ task.spawn(function()
                             table.insert(targets, hrp)
                         end
                     end
-                end,
+                end
                 
                 for _, targetHRP in ipairs(targets) do
                     if not state.SweepAll or not humanoid or humanoid.Health <= 0 then break end
                     if myHRP and targetHRP and targetHRP.Parent then
-                        myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, -3, 2.5)[cite: 3, 4]
+                        myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, -3, 2.5)
                         myHRP.Velocity = Vector3.new(0, 0, 0)
                     end
                     task.wait(CONFIG.SweepTime)
@@ -136,36 +212,3 @@ task.spawn(function()
         end
     end
 end)
-
-Tabs.Main:AddSection("Knor Bypass & Farm Controls")
-
-Tabs.Main:AddButton({
-    Title = "👻 Bật / Tắt Noclip",
-    Callback = function()
-        state.Noclip = not state.Noclip
-        print("[Z Hub] Noclip: " .. tostring(state.Noclip))
-    end
-})
-
-Tabs.Main:AddButton({
-    Title = "🛡️ Bật / Tắt Bypass AC",
-    Callback = function()
-        state.Bypass = not state.Bypass
-        if state.Bypass then
-            resetCount = 0
-            print("[Knor bypass] Start bypass...")
-        else
-            print("[Knor bypass] Stopped.")
-        end
-    end
-})
-
-Tabs.Main:AddButton({
-    Title = "⚡ Bật / Tắt Gojo Sweep All",
-    Callback = function()
-        state.SweepAll = not state.SweepAll
-        print("[Z Hub] Sweep All: " .. tostring(state.SweepAll))
-    end
-})
-
-Window:SelectTab(1)
