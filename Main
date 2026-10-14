@@ -1,17 +1,18 @@
 -- // ====================================================================
--- // Z Hub - Advanced Execution Framework
--- // Architecture: Modular Native UI & State Management
+-- // CPZ Menu - Optimized Execution Framework
 -- // ====================================================================
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 
 local localPlayer = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
+
+-- Vùng chứa giao diện an toàn (Chống lỗi không hiện menu trên một số executor)
+local CoreGui = gethui() or game:GetService("CoreGui") or localPlayer:FindFirstChild("PlayerGui")
 
 local executionState = {
     Noclip = false,
@@ -41,7 +42,7 @@ end
 -- // ====================================================================
 
 local authScreenGui = Instance.new("ScreenGui")
-authScreenGui.Name = "ZHubAuthInterface"
+authScreenGui.Name = "CPZ_AuthInterface"
 authScreenGui.Parent = CoreGui
 authScreenGui.ResetOnSpawn = false
 
@@ -116,11 +117,11 @@ submitStroke.Parent = submitButton
 submitStroke.Thickness = 3
 
 -- // ====================================================================
--- // Module: Primary Interface (Z Hub Main UI)
+-- // Module: Primary Interface (CPZ Menu Main UI)
 -- // ====================================================================
 
 local mainScreenGui = Instance.new("ScreenGui")
-mainScreenGui.Name = "ZHubMainInterface"
+mainScreenGui.Name = "CPZ_MainInterface"
 mainScreenGui.Parent = CoreGui
 mainScreenGui.ResetOnSpawn = false
 mainScreenGui.Enabled = false
@@ -132,9 +133,9 @@ floatButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 floatButton.Position = UDim2.new(0, 30, 0.5, -25)
 floatButton.Size = UDim2.new(0, 50, 0, 50)
 floatButton.Font = Enum.Font.GothamBold
-floatButton.Text = "Z"
+floatButton.Text = "CPZ"
 floatButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-floatButton.TextSize = 22
+floatButton.TextSize = 18
 floatButton.Active = true
 floatButton.Draggable = true
 
@@ -190,9 +191,9 @@ brandingLabel.Parent = sidebar
 brandingLabel.BackgroundTransparency = 1
 brandingLabel.Size = UDim2.new(1, 0, 0, 50)
 brandingLabel.Font = Enum.Font.GothamBold
-brandingLabel.Text = "Z Hub"
+brandingLabel.Text = "CPZ Menu"
 brandingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-brandingLabel.TextSize = 20
+brandingLabel.TextSize = 18
 
 local tabMainBtn = Instance.new("TextButton")
 tabMainBtn.Parent = sidebar
@@ -340,7 +341,7 @@ end)
 
 local function authenticateUser()
     if credentialInput.Text == "0946" then
-        dispatchNotification("Z Hub", "Nhập Key thành công!")
+        dispatchNotification("CPZ Menu", "Nhập Key thành công!")
         authScreenGui:Destroy()
         mainScreenGui.Enabled = true
     else
@@ -396,7 +397,7 @@ toggleBypassBtn.MouseButton1Click:Connect(function()
     executionState.Bypass = not executionState.Bypass
     if executionState.Bypass then
         resetMetricsCount = 0
-        dispatchNotification("Z Hub", "Start bypass")
+        dispatchNotification("CPZ Menu", "Start bypass")
         toggleBypassBtn.Text = "🛡️ Bypass AC (Auto): ON"
         toggleBypassBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
     else
@@ -427,7 +428,7 @@ timeInputBox.FocusLost:Connect(function()
     local numericValue = tonumber(timeInputBox.Text)
     if numericValue then
         configuration.SweepTime = numericValue
-        dispatchNotification("Z Hub", "Đã cập nhật Sweep Time: " .. tostring(numericValue))
+        dispatchNotification("CPZ Menu", "Đã cập nhật Sweep Time: " .. tostring(numericValue))
     end
 end)
 
@@ -437,9 +438,9 @@ applyBgButton.MouseButton1Click:Connect(function()
         applyBgButton.Text = "Đang tải..."
         pcall(function()
             local fetchedData = game:HttpGet(targetUrl)
-            writefile("ZHub_CustomBg.png", fetchedData)
-            backgroundImage.Image = getcustomasset("ZHub_CustomBg.png")
-            dispatchNotification("Z Hub", "Đổi ảnh nền thành công!")
+            writefile("CPZ_CustomBg.png", fetchedData)
+            backgroundImage.Image = getcustomasset("CPZ_CustomBg.png")
+            dispatchNotification("CPZ Menu", "Đổi ảnh nền thành công!")
         end)
         applyBgButton.Text = "Đổi Ảnh Nền"
     end
@@ -541,7 +542,7 @@ task.spawn(function()
                                 task.wait(3)
                             end
                         else
-                            dispatchNotification("Z Hub", "Bypass Success (Resets: " .. tostring(resetMetricsCount) .. ")")
+                            dispatchNotification("CPZ Menu", "Bypass Success (Resets: " .. tostring(resetMetricsCount) .. ")")
                             task.wait(2)
                         end
                     end
