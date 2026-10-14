@@ -1,3 +1,7 @@
+-- ======================================================
+-- Z HUB - TEST | VOID DEATH BYPASS & IN-GAME URL BACKGROUND
+-- ======================================================
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -9,20 +13,20 @@ local state = {
     Bypass = false,
     SweepAll = false
 }
-
-local CONFIG = {
-    SweepTime = 0.01
-}
-
+local CONFIG = { SweepTime = 0.01 }
 local resetCount = 0
 
--- Tạo Menu UI Đơn Giản, Chống Crash Tuyệt Đối
+-- 1. TẠO MENU GIAO DIỆN TÙY CHỈNH
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+local BgImage = Instance.new("ImageLabel")
 local TitleLabel = Instance.new("TextLabel")
 local ToggleNoclipBtn = Instance.new("TextButton")
 local ToggleBypassBtn = Instance.new("TextButton")
 local ToggleSweepBtn = Instance.new("TextButton")
+local UrlInput = Instance.new("TextBox")
+local ApplyBgBtn = Instance.new("TextButton")
 
 ScreenGui.Name = "ZHubTest"
 ScreenGui.Parent = CoreGui
@@ -30,82 +34,120 @@ ScreenGui.ResetOnSpawn = false
 
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
-MainFrame.Size = UDim2.new(0, 240, 0, 220)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.Position = UDim2.new(0.5, -125, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 250, 0, 290) -- Tăng chiều cao để chứa ô nhập URL
 MainFrame.Active = true
 MainFrame.Draggable = true
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+-- Lớp ảnh nền
+BgImage.Parent = MainFrame
+BgImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+BgImage.BackgroundTransparency = 1
+BgImage.Size = UDim2.new(1, 0, 1, 0)
+-- Mặc định để trống hoặc tải 1 ảnh mặc định nếu muốn
+BgImage.ScaleType = Enum.ScaleType.Crop
+BgImage.ImageTransparency = 0.4
+local BgCorner = Instance.new("UICorner")
+BgCorner.CornerRadius = UDim.new(0, 10)
+BgCorner.Parent = BgImage
 
 TitleLabel.Parent = MainFrame
-TitleLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-TitleLabel.Size = UDim2.new(0, 240, 0, 40)
-TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TitleLabel.BackgroundTransparency = 0.5
+TitleLabel.Size = UDim2.new(1, 0, 0, 45)
+TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.Text = "Z hub - test"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.TextSize = 18
+TitleLabel.TextSize = 20
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = TitleLabel
 
-ToggleNoclipBtn.Parent = MainFrame
-ToggleNoclipBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-ToggleNoclipBtn.Position = UDim2.new(0, 10, 0, 55)
-ToggleNoclipBtn.Size = UDim2.new(0, 220, 0, 40)
-ToggleNoclipBtn.Font = Enum.Font.SourceSansBold
-ToggleNoclipBtn.Text = "Noclip: OFF"
-ToggleNoclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleNoclipBtn.TextSize = 14
+local function CreateBtnStyle(btn, yPos, text, sizeX)
+    btn.Parent = MainFrame
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.BackgroundTransparency = 0.2
+    btn.Position = UDim2.new(0, 15, 0, yPos)
+    btn.Size = UDim2.new(0, sizeX or 220, 0, 40)
+    btn.Font = Enum.Font.GothamSemibold
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 14
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
+end
 
-ToggleBypassBtn.Parent = MainFrame
-ToggleBypassBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-ToggleBypassBtn.Position = UDim2.new(0, 10, 0, 105)
-ToggleBypassBtn.Size = UDim2.new(0, 220, 0, 40)
-ToggleBypassBtn.Font = Enum.Font.SourceSansBold
-ToggleBypassBtn.Text = "Bypass AC: OFF"
-ToggleBypassBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBypassBtn.TextSize = 14
+CreateBtnStyle(ToggleNoclipBtn, 60, "👻 Noclip: OFF")
+CreateBtnStyle(ToggleBypassBtn, 115, "🛡️ Bypass AC: OFF")
+CreateBtnStyle(ToggleSweepBtn, 170, "⚡ Gojo Sweep All: OFF")
 
-ToggleSweepBtn.Parent = MainFrame
-ToggleSweepBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-ToggleSweepBtn.Position = UDim2.new(0, 10, 0, 155)
-ToggleSweepBtn.Size = UDim2.new(0, 220, 0, 40)
-ToggleSweepBtn.Font = Enum.Font.SourceSansBold
-ToggleSweepBtn.Text = "Gojo Sweep All: OFF"
-ToggleSweepBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleSweepBtn.TextSize = 14
+-- Ô nhập URL và Nút Đổi Ảnh
+UrlInput.Parent = MainFrame
+UrlInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+UrlInput.Position = UDim2.new(0, 15, 0, 230)
+UrlInput.Size = UDim2.new(0, 160, 0, 40)
+UrlInput.Font = Enum.Font.Gotham
+UrlInput.PlaceholderText = "Dán link ảnh (URL)..."
+UrlInput.Text = ""
+UrlInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+UrlInput.TextSize = 12
+UrlInput.TextXAlignment = Enum.TextXAlignment.Left
+UrlInput.ClearTextOnFocus = false
+UrlInput.ClipsDescendants = true
+local InputCorner = Instance.new("UICorner")
+InputCorner.CornerRadius = UDim.new(0, 6)
+InputCorner.Parent = UrlInput
 
--- Xử lý sự kiện bấm nút
+CreateBtnStyle(ApplyBgBtn, 230, "Đổi", 50)
+ApplyBgBtn.Position = UDim2.new(0, 185, 0, 230)
+ApplyBgBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+
+-- Xử lý nút bấm
 ToggleNoclipBtn.MouseButton1Click:Connect(function()
     state.Noclip = not state.Noclip
-    ToggleNoclipBtn.Text = state.Noclip and "Noclip: ON" or "Noclip: OFF"
-    ToggleNoclipBtn.BackgroundColor3 = state.Noclip and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 60, 60)
+    ToggleNoclipBtn.Text = state.Noclip and "👻 Noclip: ON" or "👻 Noclip: OFF"
+    ToggleNoclipBtn.BackgroundColor3 = state.Noclip and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
 end)
 
 ToggleBypassBtn.MouseButton1Click:Connect(function()
     state.Bypass = not state.Bypass
-    ToggleBypassBtn.Text = state.Bypass and "Bypass AC: ON" or "Bypass AC: OFF"
-    ToggleBypassBtn.BackgroundColor3 = state.Bypass and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 60, 60)
+    ToggleBypassBtn.Text = state.Bypass and "🛡️ Bypass AC: ON" or "🛡️ Bypass AC: OFF"
+    ToggleBypassBtn.BackgroundColor3 = state.Bypass and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
     if state.Bypass then resetCount = 0 end
 end)
 
 ToggleSweepBtn.MouseButton1Click:Connect(function()
     state.SweepAll = not state.SweepAll
-    ToggleSweepBtn.Text = state.SweepAll and "Gojo Sweep All: ON" or "Gojo Sweep All: OFF"
-    ToggleSweepBtn.BackgroundColor3 = state.SweepAll and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 60, 60)
+    ToggleSweepBtn.Text = state.SweepAll and "⚡ Gojo Sweep All: ON" or "⚡ Gojo Sweep All: OFF"
+    ToggleSweepBtn.BackgroundColor3 = state.SweepAll and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
 end)
 
--- 1. Noclip Xuyên Tường
+ApplyBgBtn.MouseButton1Click:Connect(function()
+    local url = UrlInput.Text
+    if url and url ~= "" then
+        ApplyBgBtn.Text = "..."
+        pcall(function()
+            local imgData = game:HttpGet(url)
+            writefile("ZHub_CustomBg.png", imgData)
+            BgImage.Image = getcustomasset("ZHub_CustomBg.png")
+        end)
+        ApplyBgBtn.Text = "Đổi"
+    end
+end)
+
+-- 2. LOGIC SCRIPT CHÍNH
 RunService.Stepped:Connect(function()
-    if state.Noclip then
-        local char = localPlayer.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
-            end
+    if state.Noclip and localPlayer.Character then
+        for _, part in ipairs(localPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
         end
     end
 end)
 
--- 2. Knor Bypass & Force Death Loop
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -142,35 +184,29 @@ task.spawn(function()
                     
                     if state.Bypass and humanoid and humanoid.Health > 0 then
                         if teleportedBack then
-                            local resetRemote = ReplicatedStorage:FindFirstChild("Knit") 
-                                and ReplicatedStorage.Knit:FindFirstChild("Services") 
-                                and ReplicatedStorage.Knit.Services:FindFirstChild("JoinService")
-                                and ReplicatedStorage.Knit.Services.JoinService:FindFirstChild("RE")
-                                and ReplicatedStorage.Knit.Services.JoinService.RE:FindFirstChild("Reset")
-
+                            -- ÉP CHẾT BẰNG VOID DEATH (Dịch chuyển xuống vực sâu -99999)
                             while state.Bypass and localPlayer.Character do
                                 pcall(function()
-                                    if resetRemote then
-                                        resetRemote:FireServer()
-                                    end
                                     local char = localPlayer.Character
-                                    if char then
-                                        local rootPart = char:FindFirstChild("HumanoidRootPart")
-                                        if rootPart then
-                                            rootPart:Destroy()
-                                        end
+                                    local root = char:FindFirstChild("HumanoidRootPart")
+                                    local hum = char:FindFirstChild("Humanoid")
+                                    
+                                    if hum then hum:ChangeState(Enum.HumanoidStateType.Dead) end
+                                    
+                                    if root then
+                                        root.CFrame = CFrame.new(0, -99999, 0)
                                     end
                                 end)
                                 resetCount = resetCount + 1
-                                print("[Knor bypass] Force Death attempts: " .. tostring(resetCount))
-                                task.wait(3)
+                                print("[Knor Bypass] Void Death attempts: " .. tostring(resetCount))
+                                task.wait(3.5)
                                 break
                             end
                         else
                             state.Bypass = false
-                            ToggleBypassBtn.Text = "Bypass AC: OFF"
-                            ToggleBypassBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-                            print("[Knor bypass] Success!")
+                            ToggleBypassBtn.Text = "🛡️ Bypass AC: OFF"
+                            ToggleBypassBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                            print("[Knor Bypass] Success!")
                             task.wait(2)
                         end
                     end
@@ -180,7 +216,6 @@ task.spawn(function()
     end
 end)
 
--- 3. Logic Sweep All / Gojo Farm
 task.spawn(function()
     while true do
         task.wait(CONFIG.SweepTime)
