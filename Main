@@ -1,12 +1,11 @@
 -- ======================================================
--- Z HUB - TEST | BIG MENU + URL BACKGROUND & VOID DEATH
+-- Z HUB - TEST | SMART BYPASS (KNIT + VOID) & BIG MENU
 -- ======================================================
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
 local localPlayer = Players.LocalPlayer
 
 local state = {
@@ -17,15 +16,13 @@ local state = {
 local CONFIG = { SweepTime = 0.01 }
 local resetCount = 0
 
--- 1. XÂY DỰNG GIAO DIỆN BIG MENU (GIỐNG FLUENT)
+-- XÂY DỰNG GIAO DIỆN BIG MENU
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ZHubTestBig"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
--- Khung chính to rộng
 local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
@@ -36,19 +33,17 @@ local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 8)
 UICorner.Parent = MainFrame
 
--- Lớp ảnh nền (Background)
 local BgImage = Instance.new("ImageLabel")
 BgImage.Parent = MainFrame
 BgImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 BgImage.BackgroundTransparency = 1
 BgImage.Size = UDim2.new(1, 0, 1, 0)
 BgImage.ScaleType = Enum.ScaleType.Crop
-BgImage.ImageTransparency = 0.5 -- Làm mờ ảnh để chữ dễ đọc
+BgImage.ImageTransparency = 0.5 
 local BgCorner = Instance.new("UICorner")
 BgCorner.CornerRadius = UDim.new(0, 8)
 BgCorner.Parent = BgImage
 
--- Sidebar bên trái (Chứa các nút chuyển Tab)
 local Sidebar = Instance.new("Frame")
 Sidebar.Parent = MainFrame
 Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
@@ -60,7 +55,6 @@ SidebarCorner.Parent = Sidebar
 
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Parent = Sidebar
-TitleLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Size = UDim2.new(1, 0, 0, 50)
 TitleLabel.Font = Enum.Font.GothamBold
@@ -96,18 +90,15 @@ local TabSettingCorner = Instance.new("UICorner")
 TabSettingCorner.CornerRadius = UDim.new(0, 6)
 TabSettingCorner.Parent = TabSettingBtn
 
--- Container chứa nội dung các Tab
 local TabContainer = Instance.new("Frame")
 TabContainer.Parent = MainFrame
-TabContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 TabContainer.BackgroundTransparency = 1
 TabContainer.Position = UDim2.new(0, 150, 0, 10)
 TabContainer.Size = UDim2.new(0, 340, 0, 330)
 
--- ==================== TAB 1: MAIN & BYPASS ====================
+-- TAB MAIN
 local PageMain = Instance.new("Frame")
 PageMain.Parent = TabContainer
-PageMain.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 PageMain.BackgroundTransparency = 1
 PageMain.Size = UDim2.new(1, 0, 1, 0)
 PageMain.Visible = true
@@ -130,13 +121,12 @@ local function CreateToggleBtn(parent, yPos, text)
 end
 
 local ToggleNoclipBtn = CreateToggleBtn(PageMain, 10, "👻 Noclip: OFF")
-local ToggleBypassBtn = CreateToggleBtn(PageMain, 65, "🛡️ Bypass AC (Void Death): OFF")
+local ToggleBypassBtn = CreateToggleBtn(PageMain, 65, "🛡️ Bypass AC (Smart): OFF")
 local ToggleSweepBtn = CreateToggleBtn(PageMain, 120, "⚡ Gojo Sweep All: OFF")
 
--- ==================== TAB 2: CÀI ĐẶT ẢNH NỀN ====================
+-- TAB CÀI ĐẶT ẢNH
 local PageSetting = Instance.new("Frame")
 PageSetting.Parent = TabContainer
-PageSetting.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 PageSetting.BackgroundTransparency = 1
 PageSetting.Size = UDim2.new(1, 0, 1, 0)
 PageSetting.Visible = false
@@ -146,7 +136,7 @@ SettingTitle.Parent = PageSetting
 SettingTitle.BackgroundTransparency = 1
 SettingTitle.Size = UDim2.new(1, 0, 0, 30)
 SettingTitle.Font = Enum.Font.GothamBold
-SettingTitle.Text = "Tùy Chỉnh Ảnh Nền Giao Diện"
+SettingTitle.Text = "Tùy Chỉnh Ảnh Nền (Dán link URL)"
 SettingTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 SettingTitle.TextSize = 16
 
@@ -157,4 +147,187 @@ UrlInput.BackgroundTransparency = 0.3
 UrlInput.Position = UDim2.new(0, 10, 0, 40)
 UrlInput.Size = UDim2.new(0, 310, 0, 40)
 UrlInput.Font = Enum.Font.Gotham
-UrlInput.PlaceholderText = "Dán link ảnh (URL .jpg/.png
+UrlInput.PlaceholderText = "Dán link ảnh (URL .jpg/.png)..."
+UrlInput.Text = ""
+UrlInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+UrlInput.TextSize = 12
+UrlInput.TextXAlignment = Enum.TextXAlignment.Left
+UrlInput.ClearTextOnFocus = false
+UrlInput.ClipsDescendants = true
+local InputCorner = Instance.new("UICorner")
+InputCorner.CornerRadius = UDim.new(0, 6)
+InputCorner.Parent = UrlInput
+
+local ApplyBgBtn = Instance.new("TextButton")
+ApplyBgBtn.Parent = PageSetting
+ApplyBgBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 210)
+ApplyBgBtn.Position = UDim2.new(0, 10, 0, 90)
+ApplyBgBtn.Size = UDim2.new(0, 150, 0, 40)
+ApplyBgBtn.Font = Enum.Font.GothamBold
+ApplyBgBtn.Text = "Đổi Ảnh Nền"
+ApplyBgBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ApplyBgBtn.TextSize = 14
+local ApplyCorner = Instance.new("UICorner")
+ApplyCorner.CornerRadius = UDim.new(0, 6)
+ApplyCorner.Parent = ApplyBgBtn
+
+-- XỬ LÝ NÚT BẤM
+TabMainBtn.MouseButton1Click:Connect(function()
+    PageMain.Visible = true; PageSetting.Visible = false
+    TabMainBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60); TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabSettingBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); TabSettingBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+end)
+
+TabSettingBtn.MouseButton1Click:Connect(function()
+    PageMain.Visible = false; PageSetting.Visible = true
+    TabSettingBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60); TabSettingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabMainBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); TabMainBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+end)
+
+ToggleNoclipBtn.MouseButton1Click:Connect(function()
+    state.Noclip = not state.Noclip
+    ToggleNoclipBtn.Text = state.Noclip and "👻 Noclip: ON" or "👻 Noclip: OFF"
+    ToggleNoclipBtn.BackgroundColor3 = state.Noclip and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
+end)
+
+ToggleBypassBtn.MouseButton1Click:Connect(function()
+    state.Bypass = not state.Bypass
+    ToggleBypassBtn.Text = state.Bypass and "🛡️ Bypass AC (Smart): ON" or "🛡️ Bypass AC (Smart): OFF"
+    ToggleBypassBtn.BackgroundColor3 = state.Bypass and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
+    if state.Bypass then resetCount = 0 end
+end)
+
+ToggleSweepBtn.MouseButton1Click:Connect(function()
+    state.SweepAll = not state.SweepAll
+    ToggleSweepBtn.Text = state.SweepAll and "⚡ Gojo Sweep All: ON" or "⚡ Gojo Sweep All: OFF"
+    ToggleSweepBtn.BackgroundColor3 = state.SweepAll and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
+end)
+
+ApplyBgBtn.MouseButton1Click:Connect(function()
+    local url = UrlInput.Text
+    if url and url ~= "" then
+        ApplyBgBtn.Text = "Đang tải..."
+        pcall(function()
+            local imgData = game:HttpGet(url)
+            writefile("ZHub_CustomBigBg.png", imgData)
+            BgImage.Image = getcustomasset("ZHub_CustomBigBg.png")
+        end)
+        ApplyBgBtn.Text = "Đổi Ảnh Nền"
+    end
+end)
+
+-- LOGIC CHỨC NĂNG
+RunService.Stepped:Connect(function()
+    if state.Noclip and localPlayer.Character then
+        for _, part in ipairs(localPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+end)
+
+-- LOGIC SMART BYPASS (Tự động nhận biết và tắt nút khi xong)
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if state.Bypass then
+            local character = localPlayer.Character
+            local hrp = character and character:FindFirstChild("HumanoidRootPart")
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+            
+            if hrp and humanoid and humanoid.Health > 0 then
+                local target = nil
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        target = p.Character.HumanoidRootPart
+                        break
+                    end
+                end
+                
+                if target then
+                    -- Lưu tọa độ gốc để so sánh
+                    local startPos = hrp.Position
+                    hrp.CFrame = target.CFrame * CFrame.new(0, 0, 2.5)
+                    
+                    local teleportedBack = false
+                    local timer = 0
+                    
+                    -- Chờ 3 giây để xem AC có phản ứng không
+                    while timer < 3 do
+                        task.wait(0.1)
+                        timer = timer + 0.1
+                        if not state.Bypass or not humanoid or humanoid.Health <= 0 then break end
+                        -- Kiểm tra Magnitude: Nếu khoảng cách so với lúc đầu quá ngắn -> Bị giật về
+                        if (hrp.Position - startPos).Magnitude < 10 then
+                            teleportedBack = true
+                            break
+                        end
+                    end
+                    
+                    if state.Bypass and humanoid and humanoid.Health > 0 then
+                        if teleportedBack then
+                            print("[Bypass] Bị giật về, tiến hành ép Reset...")
+                            local resetRemote = ReplicatedStorage:FindFirstChild("Knit") 
+                                and ReplicatedStorage.Knit:FindFirstChild("Services") 
+                                and ReplicatedStorage.Knit.Services:FindFirstChild("JoinService")
+                                and ReplicatedStorage.Knit.Services.JoinService:FindFirstChild("RE")
+                                and ReplicatedStorage.Knit.Services.JoinService.RE:FindFirstChild("Reset")
+
+                            pcall(function()
+                                -- Thử bắn lệnh Knit Reset
+                                if resetRemote then resetRemote:FireServer() end
+                                -- Kết hợp lao thẳng xuống vực cho chắc chắn
+                                if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Dead) end
+                                if hrp then hrp.CFrame = CFrame.new(0, -99999, 0) end
+                            end)
+                            
+                            resetCount = resetCount + 1
+                            if localPlayer.CharacterAdded then
+                                localPlayer.CharacterAdded:Wait()
+                            end
+                            task.wait(1.5)
+                        else
+                            -- Nếu qua được bước đo Magnitude mà không bị giật -> Bypass Thành Công!
+                            state.Bypass = false
+                            ToggleBypassBtn.Text = "🛡️ Bypass AC (Smart): OFF"
+                            ToggleBypassBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                            print("[Bypass] Thành công sau " .. tostring(resetCount) .. " lần reset!")
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- LOGIC GOJO SWEEP ALL
+task.spawn(function()
+    while true do
+        task.wait(CONFIG.SweepTime)
+        if state.SweepAll then
+            local myChar = localPlayer.Character
+            local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+            local humanoid = myChar and myChar:FindFirstChildOfClass("Humanoid")
+            
+            if myHRP and humanoid and humanoid.Health > 0 then
+                local targets = {}
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local hrp = p.Character.HumanoidRootPart
+                        if (hrp.Position - myHRP.Position).Magnitude <= 500 then
+                            table.insert(targets, hrp)
+                        end
+                    end
+                end
+                
+                for _, targetHRP in ipairs(targets) do
+                    if not state.SweepAll or not humanoid or humanoid.Health <= 0 then break end
+                    if myHRP and targetHRP and targetHRP.Parent then
+                        myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, -3, 2.5)
+                        myHRP.Velocity = Vector3.new(0, 0, 0)
+                    end
+                    task.wait(CONFIG.SweepTime)
+                end
+            end
+        end
+    end
+end)
