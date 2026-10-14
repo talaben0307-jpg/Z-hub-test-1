@@ -1,296 +1,548 @@
--- ======================================================
--- Z HUB - TEST | SMART BYPASS (KNIT + VOID) & BIG MENU
--- ======================================================
+-- // ====================================================================
+-- // Z Hub - Advanced Execution Framework
+-- // Architecture: Modular Native UI & State Management
+-- // ====================================================================
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
-local localPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
 
-local state = {
+local localPlayer = Players.LocalPlayer
+local camera = Workspace.CurrentCamera
+
+local executionState = {
     Noclip = false,
     Bypass = false,
-    SweepAll = false
+    SweepAll = false,
+    ViewRandom = false
 }
-local CONFIG = { SweepTime = 0.01 }
-local resetCount = 0
 
--- XÂY DỰNG GIAO DIỆN BIG MENU
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ZHubTestBig"
-ScreenGui.Parent = CoreGui
-ScreenGui.ResetOnSpawn = false
+local configuration = {
+    SweepTime = 0.01
+}
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MainFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
-MainFrame.Size = UDim2.new(0, 500, 0, 350)
-MainFrame.Active = true
-MainFrame.Draggable = true
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = MainFrame
+local resetMetricsCount = 0
 
-local BgImage = Instance.new("ImageLabel")
-BgImage.Parent = MainFrame
-BgImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-BgImage.BackgroundTransparency = 1
-BgImage.Size = UDim2.new(1, 0, 1, 0)
-BgImage.ScaleType = Enum.ScaleType.Crop
-BgImage.ImageTransparency = 0.5 
-local BgCorner = Instance.new("UICorner")
-BgCorner.CornerRadius = UDim.new(0, 8)
-BgCorner.Parent = BgImage
+local function dispatchNotification(header, content)
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = header,
+            Text = content,
+            Duration = 3
+        })
+    end)
+end
 
-local Sidebar = Instance.new("Frame")
-Sidebar.Parent = MainFrame
-Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Sidebar.BackgroundTransparency = 0.3
-Sidebar.Size = UDim2.new(0, 140, 1, 0)
-local SidebarCorner = Instance.new("UICorner")
-SidebarCorner.CornerRadius = UDim.new(0, 8)
-SidebarCorner.Parent = Sidebar
+-- // ====================================================================
+-- // Module: Authentication Interface (Security Gateway)
+-- // ====================================================================
 
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Parent = Sidebar
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Size = UDim2.new(1, 0, 0, 50)
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.Text = "Z hub - test"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.TextSize = 18
+local authScreenGui = Instance.new("ScreenGui")
+authScreenGui.Name = "ZHubAuthInterface"
+authScreenGui.Parent = CoreGui
+authScreenGui.ResetOnSpawn = false
 
-local TabMainBtn = Instance.new("TextButton")
-TabMainBtn.Parent = Sidebar
-TabMainBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-TabMainBtn.BackgroundTransparency = 0.5
-TabMainBtn.Position = UDim2.new(0, 10, 0, 60)
-TabMainBtn.Size = UDim2.new(0, 120, 0, 35)
-TabMainBtn.Font = Enum.Font.GothamSemibold
-TabMainBtn.Text = "Main & Bypass"
-TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-TabMainBtn.TextSize = 13
-local TabMainCorner = Instance.new("UICorner")
-TabMainCorner.CornerRadius = UDim.new(0, 6)
-TabMainCorner.Parent = TabMainBtn
+local authFrame = Instance.new("Frame")
+authFrame.Name = "Container"
+authFrame.Parent = authScreenGui
+authFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+authFrame.Position = UDim2.new(0.5, -175, 0.5, -110)
+authFrame.Size = UDim2.new(0, 350, 0, 220)
+authFrame.Active = true
+authFrame.Draggable = true
 
-local TabSettingBtn = Instance.new("TextButton")
-TabSettingBtn.Parent = Sidebar
-TabSettingBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-TabSettingBtn.BackgroundTransparency = 0.5
-TabSettingBtn.Position = UDim2.new(0, 10, 0, 105)
-TabSettingBtn.Size = UDim2.new(0, 120, 0, 35)
-TabSettingBtn.Font = Enum.Font.GothamSemibold
-TabSettingBtn.Text = "Cài Đặt Ảnh"
-TabSettingBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-TabSettingBtn.TextSize = 13
-local TabSettingCorner = Instance.new("UICorner")
-TabSettingCorner.CornerRadius = UDim.new(0, 6)
-TabSettingCorner.Parent = TabSettingBtn
+local authCorner = Instance.new("UICorner")
+authCorner.CornerRadius = UDim.new(0, 8)
+authCorner.Parent = authFrame
 
-local TabContainer = Instance.new("Frame")
-TabContainer.Parent = MainFrame
-TabContainer.BackgroundTransparency = 1
-TabContainer.Position = UDim2.new(0, 150, 0, 10)
-TabContainer.Size = UDim2.new(0, 340, 0, 330)
+local authStroke = Instance.new("UIStroke")
+authStroke.Parent = authFrame
+authStroke.Thickness = 3
 
--- TAB MAIN
-local PageMain = Instance.new("Frame")
-PageMain.Parent = TabContainer
-PageMain.BackgroundTransparency = 1
-PageMain.Size = UDim2.new(1, 0, 1, 0)
-PageMain.Visible = true
+local authHeader = Instance.new("TextLabel")
+authHeader.Parent = authFrame
+authHeader.BackgroundTransparency = 1
+authHeader.Position = UDim2.new(0, 0, 0, 15)
+authHeader.Size = UDim2.new(1, 0, 0, 30)
+authHeader.Font = Enum.Font.GothamBold
+authHeader.Text = "Bảo mật"
+authHeader.TextColor3 = Color3.fromRGB(255, 255, 255)
+authHeader.TextSize = 20
 
-local function CreateToggleBtn(parent, yPos, text)
+local authPromptLabel = Instance.new("TextLabel")
+authPromptLabel.Parent = authFrame
+authPromptLabel.BackgroundTransparency = 1
+authPromptLabel.Position = UDim2.new(0, 0, 0, 45)
+authPromptLabel.Size = UDim2.new(1, 0, 0, 20)
+authPromptLabel.Font = Enum.Font.Gotham
+authPromptLabel.Text = "nhập key ở đây"
+authPromptLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+authPromptLabel.TextSize = 13
+
+local credentialInput = Instance.new("TextBox")
+credentialInput.Parent = authFrame
+credentialInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+credentialInput.Position = UDim2.new(0.5, -140, 0, 80)
+credentialInput.Size = UDim2.new(0, 280, 0, 40)
+credentialInput.Font = Enum.Font.Gotham
+credentialInput.PlaceholderText = "Nhập key tại đây..."
+credentialInput.Text = ""
+credentialInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+credentialInput.TextSize = 14
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 6)
+inputCorner.Parent = credentialInput
+
+local submitButton = Instance.new("TextButton")
+submitButton.Parent = authFrame
+submitButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+submitButton.Position = UDim2.new(0.5, -140, 0, 135)
+submitButton.Size = UDim2.new(0, 280, 0, 45)
+submitButton.Font = Enum.Font.GothamBold
+submitButton.Text = "Xác nhận"
+submitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+submitButton.TextSize = 15
+
+local submitCorner = Instance.new("UICorner")
+submitCorner.CornerRadius = UDim.new(0, 6)
+submitCorner.Parent = submitButton
+
+local submitStroke = Instance.new("UIStroke")
+submitStroke.Parent = submitButton
+submitStroke.Thickness = 3
+
+-- // ====================================================================
+-- // Module: Primary Interface (Z Hub Main UI)
+-- // ====================================================================
+
+local mainScreenGui = Instance.new("ScreenGui")
+mainScreenGui.Name = "ZHubMainInterface"
+mainScreenGui.Parent = CoreGui
+mainScreenGui.ResetOnSpawn = false
+mainScreenGui.Enabled = false
+
+local floatButton = Instance.new("TextButton")
+floatButton.Name = "FloatToggle"
+floatButton.Parent = mainScreenGui
+floatButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+floatButton.Position = UDim2.new(0, 30, 0.5, -25)
+floatButton.Size = UDim2.new(0, 50, 0, 50)
+floatButton.Font = Enum.Font.GothamBold
+floatButton.Text = "Z"
+floatButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+floatButton.TextSize = 22
+floatButton.Active = true
+floatButton.Draggable = true
+
+local floatCorner = Instance.new("UICorner")
+floatCorner.CornerRadius = UDim.new(1, 0)
+floatCorner.Parent = floatButton
+
+local floatStroke = Instance.new("UIStroke")
+floatStroke.Parent = floatButton
+floatStroke.Thickness = 3
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainContainer"
+mainFrame.Parent = mainScreenGui
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+mainFrame.Position = UDim2.new(0.5, -250, 0.5, -190)
+mainFrame.Size = UDim2.new(0, 500, 0, 380)
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 8)
+mainCorner.Parent = mainFrame
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Parent = mainFrame
+mainStroke.Thickness = 3
+
+local backgroundImage = Instance.new("ImageLabel")
+backgroundImage.Parent = mainFrame
+backgroundImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+backgroundImage.BackgroundTransparency = 1
+backgroundImage.Size = UDim2.new(1, 0, 1, 0)
+backgroundImage.ScaleType = Enum.ScaleType.Crop
+backgroundImage.ImageTransparency = 0.5 
+
+local bgCorner = Instance.new("UICorner")
+bgCorner.CornerRadius = UDim.new(0, 8)
+bgCorner.Parent = backgroundImage
+
+local sidebar = Instance.new("Frame")
+sidebar.Parent = mainFrame
+sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+sidebar.BackgroundTransparency = 0.3
+sidebar.Size = UDim2.new(0, 140, 1, 0)
+
+local sidebarCorner = Instance.new("UICorner")
+sidebarCorner.CornerRadius = UDim.new(0, 8)
+sidebarCorner.Parent = sidebar
+
+local brandingLabel = Instance.new("TextLabel")
+brandingLabel.Parent = sidebar
+brandingLabel.BackgroundTransparency = 1
+brandingLabel.Size = UDim2.new(1, 0, 0, 50)
+brandingLabel.Font = Enum.Font.GothamBold
+brandingLabel.Text = "Z Hub"
+brandingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+brandingLabel.TextSize = 20
+
+local tabMainBtn = Instance.new("TextButton")
+tabMainBtn.Parent = sidebar
+tabMainBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+tabMainBtn.BackgroundTransparency = 0.5
+tabMainBtn.Position = UDim2.new(0, 10, 0, 60)
+tabMainBtn.Size = UDim2.new(0, 120, 0, 35)
+tabMainBtn.Font = Enum.Font.GothamSemibold
+tabMainBtn.Text = "Main & Bypass"
+tabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+tabMainBtn.TextSize = 13
+
+local tabMainCorner = Instance.new("UICorner")
+tabMainCorner.CornerRadius = UDim.new(0, 6)
+tabMainCorner.Parent = tabMainBtn
+
+local tabSettingBtn = Instance.new("TextButton")
+tabSettingBtn.Parent = sidebar
+tabSettingBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+tabSettingBtn.BackgroundTransparency = 0.5
+tabSettingBtn.Position = UDim2.new(0, 10, 0, 105)
+tabSettingBtn.Size = UDim2.new(0, 120, 0, 35)
+tabSettingBtn.Font = Enum.Font.GothamSemibold
+tabSettingBtn.Text = "Cài Đặt Ảnh"
+tabSettingBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+tabSettingBtn.TextSize = 13
+
+local tabSettingCorner = Instance.new("UICorner")
+tabSettingCorner.CornerRadius = UDim.new(0, 6)
+tabSettingCorner.Parent = tabSettingBtn
+
+local tabContainer = Instance.new("Frame")
+tabContainer.Parent = mainFrame
+tabContainer.BackgroundTransparency = 1
+tabContainer.Position = UDim2.new(0, 150, 0, 10)
+tabContainer.Size = UDim2.new(0, 340, 0, 360)
+
+-- Tab: Main Page
+local pageMain = Instance.new("ScrollingFrame")
+pageMain.Parent = tabContainer
+pageMain.BackgroundTransparency = 1
+pageMain.Size = UDim2.new(1, 0, 1, 0)
+pageMain.CanvasSize = UDim2.new(0, 0, 0, 300)
+pageMain.ScrollBarThickness = 4
+pageMain.Visible = true
+
+local function createToggleComponent(parent, yPos, labelText)
     local btn = Instance.new("TextButton")
     btn.Parent = parent
     btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     btn.BackgroundTransparency = 0.2
-    btn.Position = UDim2.new(0, 10, 0, yPos)
-    btn.Size = UDim2.new(0, 310, 0, 45)
+    btn.Position = UDim2.new(0, 5, 0, yPos)
+    btn.Size = UDim2.new(0, 320, 0, 40)
     btn.Font = Enum.Font.GothamSemibold
-    btn.Text = text
+    btn.Text = labelText
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextSize = 14
+    btn.TextSize = 13
+    
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = btn
     return btn
 end
 
-local ToggleNoclipBtn = CreateToggleBtn(PageMain, 10, "👻 Noclip: OFF")
-local ToggleBypassBtn = CreateToggleBtn(PageMain, 65, "🛡️ Bypass AC (Smart): OFF")
-local ToggleSweepBtn = CreateToggleBtn(PageMain, 120, "⚡ Gojo Sweep All: OFF")
+local toggleNoclipBtn = createToggleComponent(pageMain, 10, "👻 Noclip: OFF")
+local toggleBypassBtn = createToggleComponent(pageMain, 60, "🛡️ Bypass AC (Auto): OFF")
+local toggleSweepBtn = createToggleComponent(pageMain, 110, "⚡ Sweep All: OFF")
+local toggleViewBtn = createToggleComponent(pageMain, 160, "👁️ View Random: OFF")
 
--- TAB CÀI ĐẶT ẢNH
-local PageSetting = Instance.new("Frame")
-PageSetting.Parent = TabContainer
-PageSetting.BackgroundTransparency = 1
-PageSetting.Size = UDim2.new(1, 0, 1, 0)
-PageSetting.Visible = false
+local timeInputBox = Instance.new("TextBox")
+timeInputBox.Parent = pageMain
+timeInputBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+timeInputBox.BackgroundTransparency = 0.3
+timeInputBox.Position = UDim2.new(0, 5, 0, 210)
+timeInputBox.Size = UDim2.new(0, 320, 0, 40)
+timeInputBox.Font = Enum.Font.Gotham
+timeInputBox.PlaceholderText = "Sweep Time (Default: 0.01)..."
+timeInputBox.Text = "0.01"
+timeInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+timeInputBox.TextSize = 12
 
-local SettingTitle = Instance.new("TextLabel")
-SettingTitle.Parent = PageSetting
-SettingTitle.BackgroundTransparency = 1
-SettingTitle.Size = UDim2.new(1, 0, 0, 30)
-SettingTitle.Font = Enum.Font.GothamBold
-SettingTitle.Text = "Tùy Chỉnh Ảnh Nền (Dán link URL)"
-SettingTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-SettingTitle.TextSize = 16
+local timeCorner = Instance.new("UICorner")
+timeCorner.CornerRadius = UDim.new(0, 6)
+timeCorner.Parent = timeInputBox
 
-local UrlInput = Instance.new("TextBox")
-UrlInput.Parent = PageSetting
-UrlInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-UrlInput.BackgroundTransparency = 0.3
-UrlInput.Position = UDim2.new(0, 10, 0, 40)
-UrlInput.Size = UDim2.new(0, 310, 0, 40)
-UrlInput.Font = Enum.Font.Gotham
-UrlInput.PlaceholderText = "Dán link ảnh (URL .jpg/.png)..."
-UrlInput.Text = ""
-UrlInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-UrlInput.TextSize = 12
-UrlInput.TextXAlignment = Enum.TextXAlignment.Left
-UrlInput.ClearTextOnFocus = false
-UrlInput.ClipsDescendants = true
-local InputCorner = Instance.new("UICorner")
-InputCorner.CornerRadius = UDim.new(0, 6)
-InputCorner.Parent = UrlInput
+-- Tab: Configuration Page
+local pageSetting = Instance.new("Frame")
+pageSetting.Parent = tabContainer
+pageSetting.BackgroundTransparency = 1
+pageSetting.Size = UDim2.new(1, 0, 1, 0)
+pageSetting.Visible = false
 
-local ApplyBgBtn = Instance.new("TextButton")
-ApplyBgBtn.Parent = PageSetting
-ApplyBgBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 210)
-ApplyBgBtn.Position = UDim2.new(0, 10, 0, 90)
-ApplyBgBtn.Size = UDim2.new(0, 150, 0, 40)
-ApplyBgBtn.Font = Enum.Font.GothamBold
-ApplyBgBtn.Text = "Đổi Ảnh Nền"
-ApplyBgBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ApplyBgBtn.TextSize = 14
-local ApplyCorner = Instance.new("UICorner")
-ApplyCorner.CornerRadius = UDim.new(0, 6)
-ApplyCorner.Parent = ApplyBgBtn
+local settingTitle = Instance.new("TextLabel")
+settingTitle.Parent = pageSetting
+settingTitle.BackgroundTransparency = 1
+settingTitle.Size = UDim2.new(1, 0, 0, 30)
+settingTitle.Font = Enum.Font.GothamBold
+settingTitle.Text = "Tùy Chỉnh Ảnh Nền (Dán link URL)"
+settingTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+settingTitle.TextSize = 14
 
--- XỬ LÝ NÚT BẤM
-TabMainBtn.MouseButton1Click:Connect(function()
-    PageMain.Visible = true; PageSetting.Visible = false
-    TabMainBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60); TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TabSettingBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); TabSettingBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+local urlInputBox = Instance.new("TextBox")
+urlInputBox.Parent = pageSetting
+urlInputBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+urlInputBox.BackgroundTransparency = 0.3
+urlInputBox.Position = UDim2.new(0, 5, 0, 40)
+urlInputBox.Size = UDim2.new(0, 320, 0, 40)
+urlInputBox.Font = Enum.Font.Gotham
+urlInputBox.PlaceholderText = "Dán link ảnh (URL .jpg/.png)..."
+urlInputBox.Text = ""
+urlInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+urlInputBox.TextSize = 12
+urlInputBox.TextXAlignment = Enum.TextXAlignment.Left
+
+local urlCorner = Instance.new("UICorner")
+urlCorner.CornerRadius = UDim.new(0, 6)
+urlCorner.Parent = urlInputBox
+
+local applyBgButton = Instance.new("TextButton")
+applyBgButton.Parent = pageSetting
+applyBgButton.BackgroundColor3 = Color3.fromRGB(0, 120, 210)
+applyBgButton.Position = UDim2.new(0, 5, 0, 90)
+applyBgButton.Size = UDim2.new(0, 150, 0, 35)
+applyBgButton.Font = Enum.Font.GothamBold
+applyBgButton.Text = "Đổi Ảnh Nền"
+applyBgButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+applyBgButton.TextSize = 13
+
+local applyCorner = Instance.new("UICorner")
+applyCorner.CornerRadius = UDim.new(0, 6)
+applyCorner.Parent = applyBgButton
+
+-- // ====================================================================
+-- // Module: Event Controllers & Dynamic Rendering
+-- // ====================================================================
+
+RunService.RenderStepped:Connect(function()
+    local hueValue = tick() % 5 / 5
+    local dynamicRgbColor = Color3.fromHSV(hueValue, 1, 1)
+    authStroke.Color = dynamicRgbColor
+    submitStroke.Color = dynamicRgbColor
+    mainStroke.Color = dynamicRgbColor
+    floatStroke.Color = dynamicRgbColor
 end)
 
-TabSettingBtn.MouseButton1Click:Connect(function()
-    PageMain.Visible = false; PageSetting.Visible = true
-    TabSettingBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60); TabSettingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TabMainBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); TabMainBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-end)
+local function authenticateUser()
+    if credentialInput.Text == "0946" then
+        dispatchNotification("Z Hub", "Nhập Key thành công!")
+        authScreenGui:Destroy()
+        mainScreenGui.Enabled = true
+    else
+        authPromptLabel.Text = "Sai key! Vui lòng nhập lại (0946)"
+        authPromptLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+    end
+end
 
-ToggleNoclipBtn.MouseButton1Click:Connect(function()
-    state.Noclip = not state.Noclip
-    ToggleNoclipBtn.Text = state.Noclip and "👻 Noclip: ON" or "👻 Noclip: OFF"
-    ToggleNoclipBtn.BackgroundColor3 = state.Noclip and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
-end)
-
-ToggleBypassBtn.MouseButton1Click:Connect(function()
-    state.Bypass = not state.Bypass
-    ToggleBypassBtn.Text = state.Bypass and "🛡️ Bypass AC (Smart): ON" or "🛡️ Bypass AC (Smart): OFF"
-    ToggleBypassBtn.BackgroundColor3 = state.Bypass and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
-    if state.Bypass then resetCount = 0 end
-end)
-
-ToggleSweepBtn.MouseButton1Click:Connect(function()
-    state.SweepAll = not state.SweepAll
-    ToggleSweepBtn.Text = state.SweepAll and "⚡ Gojo Sweep All: ON" or "⚡ Gojo Sweep All: OFF"
-    ToggleSweepBtn.BackgroundColor3 = state.SweepAll and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
-end)
-
-ApplyBgBtn.MouseButton1Click:Connect(function()
-    local url = UrlInput.Text
-    if url and url ~= "" then
-        ApplyBgBtn.Text = "Đang tải..."
-        pcall(function()
-            local imgData = game:HttpGet(url)
-            writefile("ZHub_CustomBigBg.png", imgData)
-            BgImage.Image = getcustomasset("ZHub_CustomBigBg.png")
-        end)
-        ApplyBgBtn.Text = "Đổi Ảnh Nền"
+submitButton.MouseButton1Click:Connect(authenticateUser)
+credentialInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        authenticateUser()
     end
 end)
 
--- LOGIC CHỨC NĂNG
+local function toggleInterfaceVisibility()
+    mainFrame.Visible = not mainFrame.Visible
+end
+
+floatButton.MouseButton1Click:Connect(toggleInterfaceVisibility)
+
+UserInputService.InputBegan:Connect(function(inputObject, gameProcessed)
+    if not gameProcessed and inputObject.KeyCode == Enum.KeyCode.T then
+        toggleInterfaceVisibility()
+    end
+end)
+
+tabMainBtn.MouseButton1Click:Connect(function()
+    pageMain.Visible = true
+    pageSetting.Visible = false
+    tabMainBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    tabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tabSettingBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    tabSettingBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+end)
+
+tabSettingBtn.MouseButton1Click:Connect(function()
+    pageMain.Visible = false
+    pageSetting.Visible = true
+    tabSettingBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    tabSettingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tabMainBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    tabMainBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+end)
+
+toggleNoclipBtn.MouseButton1Click:Connect(function()
+    executionState.Noclip = not executionState.Noclip
+    toggleNoclipBtn.Text = executionState.Noclip and "👻 Noclip: ON" or "👻 Noclip: OFF"
+    toggleNoclipBtn.BackgroundColor3 = executionState.Noclip and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
+end)
+
+toggleBypassBtn.MouseButton1Click:Connect(function()
+    executionState.Bypass = not executionState.Bypass
+    if executionState.Bypass then
+        resetMetricsCount = 0
+        dispatchNotification("Z Hub", "Start bypass")
+        toggleBypassBtn.Text = "🛡️ Bypass AC (Auto): ON"
+        toggleBypassBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
+    else
+        toggleBypassBtn.Text = "🛡️ Bypass AC (Auto): OFF"
+        toggleBypassBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    end
+end)
+
+toggleSweepBtn.MouseButton1Click:Connect(function()
+    executionState.SweepAll = not executionState.SweepAll
+    toggleSweepBtn.Text = executionState.SweepAll and "⚡ Sweep All: ON" or "⚡ Sweep All: OFF"
+    toggleSweepBtn.BackgroundColor3 = executionState.SweepAll and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
+end)
+
+toggleViewBtn.MouseButton1Click:Connect(function()
+    executionState.ViewRandom = not executionState.ViewRandom
+    toggleViewBtn.Text = executionState.ViewRandom and "👁️ View Random: ON" or "👁️ View Random: OFF"
+    toggleViewBtn.BackgroundColor3 = executionState.ViewRandom and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(40, 40, 40)
+    
+    if not executionState.ViewRandom then
+        local myCharacter = localPlayer.Character
+        local myHumanoid = myCharacter and myCharacter:FindFirstChildOfClass("Humanoid")
+        if myHumanoid then camera.CameraSubject = myHumanoid end
+    end
+end)
+
+timeInputBox.FocusLost:Connect(function()
+    local numericValue = tonumber(timeInputBox.Text)
+    if numericValue then
+        configuration.SweepTime = numericValue
+        dispatchNotification("Z Hub", "Đã cập nhật Sweep Time: " .. tostring(numericValue))
+    end
+end)
+
+applyBgButton.MouseButton1Click:Connect(function()
+    local targetUrl = urlInputBox.Text
+    if targetUrl and targetUrl ~= "" then
+        applyBgButton.Text = "Đang tải..."
+        pcall(function()
+            local fetchedData = game:HttpGet(targetUrl)
+            writefile("ZHub_CustomBg.png", fetchedData)
+            backgroundImage.Image = getcustomasset("ZHub_CustomBg.png")
+            dispatchNotification("Z Hub", "Đổi ảnh nền thành công!")
+        end)
+        applyBgButton.Text = "Đổi Ảnh Nền"
+    end
+end)
+
+-- // ====================================================================
+-- // Module: Core Mechanics & Automated Tasks
+-- // ====================================================================
+
 RunService.Stepped:Connect(function()
-    if state.Noclip and localPlayer.Character then
-        for _, part in ipairs(localPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") then part.CanCollide = false end
+    if executionState.Noclip and localPlayer.Character then
+        for _, descendant in ipairs(localPlayer.Character:GetDescendants()) do
+            if descendant:IsA("BasePart") then descendant.CanCollide = false end
         end
     end
 end)
 
--- LOGIC SMART BYPASS (Tự động nhận biết và tắt nút khi xong)
+local function resolveTargetEntity(maxDistance)
+    maxDistance = maxDistance or 500
+    local accumulatedTargets = {}
+    
+    local myChar = localPlayer.Character
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return nil end
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character then
+            local hum = player.Character:FindFirstChildOfClass("Humanoid")
+            local hrpPart = player.Character:FindFirstChild("HumanoidRootPart")
+            if hum and hum.Health > 0 and hrpPart then
+                if (hrpPart.Position - myHRP.Position).Magnitude <= maxDistance then
+                    table.insert(accumulatedTargets, hum)
+                end
+            end
+        end
+    end
+    
+    for _, object in ipairs(Workspace:GetDescendants()) do
+        if object:IsA("Model") and string.lower(object.Name) == "dummy" then
+            local hum = object:FindFirstChildOfClass("Humanoid")
+            local hrpPart = object:FindFirstChild("HumanoidRootPart") or object:FindFirstChild("Torso")
+            if hum and hum.Health > 0 and hrpPart then
+                if (hrpPart.Position - myHRP.Position).Magnitude <= maxDistance then
+                    table.insert(accumulatedTargets, hum)
+                end
+            end
+        end
+    end
+    
+    if #accumulatedTargets > 0 then
+        return accumulatedTargets[math.random(1, #accumulatedTargets)]
+    end
+    return nil
+end
+
 task.spawn(function()
     while true do
         task.wait(0.5)
-        if state.Bypass then
+        if executionState.Bypass then
             local character = localPlayer.Character
             local hrp = character and character:FindFirstChild("HumanoidRootPart")
             local humanoid = character and character:FindFirstChildOfClass("Humanoid")
             
             if hrp and humanoid and humanoid.Health > 0 then
-                local target = nil
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        target = p.Character.HumanoidRootPart
-                        break
-                    end
-                end
+                local targetHumanoid = resolveTargetEntity(500)
+                local targetHRP = targetHumanoid and targetHumanoid.Parent and (targetHumanoid.Parent:FindFirstChild("HumanoidRootPart") or targetHumanoid.Parent:FindFirstChild("Torso"))
                 
-                if target then
-                    -- Lưu tọa độ gốc để so sánh
-                    local startPos = hrp.Position
-                    hrp.CFrame = target.CFrame * CFrame.new(0, 0, 2.5)
+                if targetHRP then
+                    local initialPosition = hrp.Position
+                    hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 2.5)
                     
-                    local teleportedBack = false
-                    local timer = 0
+                    local isRubberbanded = false
+                    local timerDuration = 0
                     
-                    -- Chờ 3 giây để xem AC có phản ứng không
-                    while timer < 3 do
+                    while timerDuration < 3 do
                         task.wait(0.1)
-                        timer = timer + 0.1
-                        if not state.Bypass or not humanoid or humanoid.Health <= 0 then break end
-                        -- Kiểm tra Magnitude: Nếu khoảng cách so với lúc đầu quá ngắn -> Bị giật về
-                        if (hrp.Position - startPos).Magnitude < 10 then
-                            teleportedBack = true
+                        timerDuration = timerDuration + 0.1
+                        if not executionState.Bypass or not humanoid or humanoid.Health <= 0 then break end
+                        if (hrp.Position - initialPosition).Magnitude < 10 then
+                            isRubberbanded = true
                             break
                         end
                     end
                     
-                    if state.Bypass and humanoid and humanoid.Health > 0 then
-                        if teleportedBack then
-                            print("[Bypass] Bị giật về, tiến hành ép Reset...")
-                            local resetRemote = ReplicatedStorage:FindFirstChild("Knit") 
-                                and ReplicatedStorage.Knit:FindFirstChild("Services") 
-                                and ReplicatedStorage.Knit.Services:FindFirstChild("JoinService")
-                                and ReplicatedStorage.Knit.Services.JoinService:FindFirstChild("RE")
-                                and ReplicatedStorage.Knit.Services.JoinService.RE:FindFirstChild("Reset")
-
-                            pcall(function()
-                                -- Thử bắn lệnh Knit Reset
-                                if resetRemote then resetRemote:FireServer() end
-                                -- Kết hợp lao thẳng xuống vực cho chắc chắn
-                                if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Dead) end
-                                if hrp then hrp.CFrame = CFrame.new(0, -99999, 0) end
-                            end)
+                    if executionState.Bypass and humanoid and humanoid.Health > 0 then
+                        if isRubberbanded then
+                            local resetRemoteEvent = ReplicatedStorage:FindFirstChild("Knit")
+                                and ReplicatedStorage.Knit:FindFirstChild("Knit")
+                                and ReplicatedStorage.Knit.Knit:FindFirstChild("Services")
+                                and ReplicatedStorage.Knit.Knit.Services:FindFirstChild("JoinService")
+                                and ReplicatedStorage.Knit.Knit.Services.JoinService:FindFirstChild("RE")
+                                and ReplicatedStorage.Knit.Knit.Services.JoinService.RE:FindFirstChild("Reset")
                             
-                            resetCount = resetCount + 1
-                            if localPlayer.CharacterAdded then
-                                localPlayer.CharacterAdded:Wait()
+                            while executionState.Bypass and humanoid and humanoid.Health > 0 do
+                                if resetRemoteEvent then
+                                    resetRemoteEvent:FireServer()
+                                    resetMetricsCount = resetMetricsCount + 1
+                                end
+                                task.wait(3)
                             end
-                            task.wait(1.5)
                         else
-                            -- Nếu qua được bước đo Magnitude mà không bị giật -> Bypass Thành Công!
-                            state.Bypass = false
-                            ToggleBypassBtn.Text = "🛡️ Bypass AC (Smart): OFF"
-                            ToggleBypassBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                            print("[Bypass] Thành công sau " .. tostring(resetCount) .. " lần reset!")
+                            dispatchNotification("Z Hub", "Bypass Success (Resets: " .. tostring(resetMetricsCount) .. ")")
+                            task.wait(2)
                         end
                     end
                 end
@@ -299,35 +551,53 @@ task.spawn(function()
     end
 end)
 
--- LOGIC GOJO SWEEP ALL
 task.spawn(function()
     while true do
-        task.wait(CONFIG.SweepTime)
-        if state.SweepAll then
+        task.wait(configuration.SweepTime)
+        if executionState.SweepAll then
             local myChar = localPlayer.Character
             local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
             local humanoid = myChar and myChar:FindFirstChildOfClass("Humanoid")
             
             if myHRP and humanoid and humanoid.Health > 0 then
-                local targets = {}
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        local hrp = p.Character.HumanoidRootPart
-                        if (hrp.Position - myHRP.Position).Magnitude <= 500 then
-                            table.insert(targets, hrp)
+                local targetCollection = {}
+                
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        local hrpPart = player.Character.HumanoidRootPart
+                        if (hrpPart.Position - myHRP.Position).Magnitude <= 500 then
+                            table.insert(targetCollection, hrpPart)
                         end
                     end
                 end
                 
-                for _, targetHRP in ipairs(targets) do
-                    if not state.SweepAll or not humanoid or humanoid.Health <= 0 then break end
-                    if myHRP and targetHRP and targetHRP.Parent then
-                        myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, -3, 2.5)
-                        myHRP.Velocity = Vector3.new(0, 0, 0)
+                for _, object in ipairs(Workspace:GetDescendants()) do
+                    if object:IsA("Model") and string.lower(object.Name) == "dummy" then
+                        local hrpPart = object:FindFirstChild("HumanoidRootPart") or object:FindFirstChild("Torso")
+                        if hrpPart and (hrpPart.Position - myHRP.Position).Magnitude <= 500 then
+                            table.insert(targetCollection, hrpPart)
+                        end
                     end
-                    task.wait(CONFIG.SweepTime)
+                end
+                
+                for _, targetHRP in ipairs(targetCollection) do
+                    if not executionState.SweepAll or not humanoid or humanoid.Health <= 0 then break end
+                    if myHRP and targetHRP and targetHRP.Parent then
+                        myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 2.5)
+                        task.wait(configuration.SweepTime)
+                    end
                 end
             end
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if executionState.ViewRandom then
+            local targetHumanoid = resolveTargetEntity(500)
+            if targetHumanoid then camera.CameraSubject = targetHumanoid end
         end
     end
 end)
